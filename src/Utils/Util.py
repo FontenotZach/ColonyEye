@@ -4,7 +4,6 @@ import random
 import ColonyTrackAdapter
 import DropboxAdapter
 import DataClean
-import CTMetrics
 
 
 def excel_time_to_unix_2(fh):
@@ -32,6 +31,8 @@ def monitor_daemon():
             DataClean.populate_mouse_obj()
             for mouse in DataClean.mouse_list:
                 mouse.sort_events()
+            DataClean.read_colony_track_files()
+            # print(DataClean.cage_network.to_string())
 
             print('Checking mice activity...')
             for mouse in DataClean.mouse_list:
@@ -54,20 +55,28 @@ def monitor_daemon():
                 print('ColonyTrack error.')
             print('Finished calculating ColonyTrack metrics.')
 
-            print('\nMouse of the hour:')
-            lucky_mouse = DataClean.mouse_list[random.randint(1, len(DataClean.mouse_list) - 1)]
-            print('\nData from mouse #' + str(lucky_mouse.id_label) + '...')
-            print('\tRFID chip ' + str(lucky_mouse.id_rfid))
-            print('\tEvents:')
-            most_recent_count = 0
-            for event in lucky_mouse.event_list:
-                print('\t\tMouse ' + str(event.id_label) + ' moved through ' + str(
-                    event.unit_label) + ' at time ' + event.time.strftime('%m/%d/%y %H:%M:%S'))
-                most_recent_count = most_recent_count + 1
-                if most_recent_count > 10:
-                    break
+            print('Writing out to DB')
+            DataClean.to_database()
+
+            # mouse_of_the_hour(DataClean.mouse_list)
 
             print('\n\nTask complete, sleeping 1 hr...')
         else:
             print('No update, sleeping...')
         time.sleep(3600)
+
+
+def mouse_of_the_hour(mouse_list):
+    print('\nMouse of the hour:')
+    lucky_mouse = DataClean.mouse_list[random.randint(1, len(mouse_list) - 1)]
+    print('\nData from mouse #' + str(lucky_mouse.id_label) + '...')
+    print('\tRFID chip ' + str(lucky_mouse.id_rfid))
+    print('\tEvents:')
+    most_recent_count = 0
+    for event in lucky_mouse.event_list:
+        print('\t\tMouse ' + str(event.id_label) + ' moved through ' + str(
+            event.unit_label) + ' at time ' + event.time.strftime('%m/%d/%y %H:%M:%S'))
+        most_recent_count = most_recent_count + 1
+        if most_recent_count > 10:
+            break
+

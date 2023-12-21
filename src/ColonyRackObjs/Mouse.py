@@ -15,7 +15,7 @@ class Mouse:
         self.event_list = sorted(self.event_list, key=lambda x: x.time, reverse=True)
 
     def is_active(self, update_time):
-        if update_time.timestamp() - self.event_list[0].time.timestamp() > 3600:
+        if update_time.timestamp() - self.event_list[0].time.timestamp() > 24000:
             return False
         else:
             return True

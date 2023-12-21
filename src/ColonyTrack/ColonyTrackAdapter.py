@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-data_script_path = os.path.join(os.getcwd(), "ColonyTrackFiles", "Scripts", "ColonyTrackScript.r")
+data_script_path = os.path.join(os.getcwd(), "../ColonyTrackFiles", "Scripts", "ColonyTrackScript.r")
 metrics_script_path = None
 
 def checkout_data(ct_data_pointer):

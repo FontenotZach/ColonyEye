@@ -1,13 +1,21 @@
 import os
 import sys
+import yaml
+from yaml import CLoader as Loader
 from dropbox import Dropbox
 from dropbox import DropboxOAuth2FlowNoRedirect
 
-folder_path = '/ColonyRack_data/'
-APP_KEY = "d7tqkcps28kfnas"
-APP_SECRET = "0lpipnnl5nkg5ne"
+yaml_path = os.path.join(os.getcwd(), '../config.yaml')
 
-auth_flow = DropboxOAuth2FlowNoRedirect(APP_KEY, APP_SECRET)
+with open(yaml_path, 'r') as yaml_file:
+    data = yaml.load(yaml_file, Loader=Loader)
+
+folder_path = '/ColonyRack_data/'
+
+APP_KEY = data.get('dropbox')[0].get('app_key')
+APP_SECRET = data.get('dropbox')[0].get('app_secret')
+
+auth_flow = DropboxOAuth2FlowNoRedirect(APP_KEY, APP_SECRET, token_access_type='offline')
 
 authorize_url = auth_flow.start()
 print("1. Go to: " + authorize_url)
@@ -21,20 +29,13 @@ except Exception as e:
     print('Error: %s' % (e,))
     exit(1)
 
-with Dropbox(oauth2_access_token=oauth_result.access_token) as dropbox_client:
-    dropbox_client.users_get_current_account()
-    print("Successfully set up client!")
-
-#     print(str(type(dbx)))
-#
-# DROPBOX_TOKEN = 'sl.BpWTb9D_3M72uiUKbi2t0pCvavxkVW-sQbXGNLIkT1QHJfz8z5TcmZzKBZM12JgzYFmtI6gvYgLwV6YYZDi2dzx_sr-Q-VTu2Mvjd0G_oMDdB4CtGdjVNJox5-Xt7m-uPQKOa-Rr73IoCjelpQZN'
-# dropbox_client = Dropbox(DROPBOX_TOKEN)
-# folder_path = '/ColonyRack_data/'
-#
-# print(str(type(dropbox_client)))
-
 
 def get_latest(update_time):
+
+    with Dropbox(app_key=APP_KEY, app_secret=APP_SECRET, oauth2_refresh_token=oauth_result.refresh_token) as dropbox_client:
+        dropbox_client.users_get_current_account()
+        print("Successfully refreshed Dropbox client")
+
     file_list = dropbox_client.files_list_folder(folder_path)
     most_current_file = file_list.entries[0].name
     most_recent_date = file_list.entries[0].server_modified
@@ -53,11 +54,11 @@ def get_latest(update_time):
 
     if 'win32' in sys.platform:
         dropbox_client.files_download_to_file(
-            download_path = os.path.join(os.getcwd(), "Data", "MiceData.csv"),
+            download_path = os.path.join(os.getcwd(), "../Data", "MiceData.csv"),
             path=dropbox_download_path)
     elif 'linux' in sys.platform:
         dropbox_client.files_download_to_file(
-            download_path='Data/MiceData.csv',
+            download_path='../Data/MiceData.csv',
             path=dropbox_download_path)
 
     return [True, most_recent_date]
