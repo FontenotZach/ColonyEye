@@ -1,9 +1,21 @@
 import subprocess
 import os
+import rdata
 
-data_script_path = os.path.join(os.getcwd(), "../ColonyTrackFiles", "Scripts", "ColonyTrackScript.r")
+
+data_script_path = os.path.join(os.getcwd(), os.path.pardir, "ColonyTrackFiles", "Scripts", "ColonyTrackScript.r")
 metrics_script_path = None
 
-def checkout_data(ct_data_pointer):
-    result = subprocess.check_output(["C://Program Files//R//R-4.3.2//bin//x64//rscript", data_script_path], shell=True)
+
+def checkout_data():
+    result = subprocess.check_output(["rscript", data_script_path], shell=True)
+
+
+def to_df():
+    path = os.path.join(os.getcwd(), os.path.pardir, "Data", "ColonyTrackData.RData")
+    print(path)
+    parsed = rdata.parser.parse_file(rdata.TESTDATA_PATH / path)
+    converted = rdata.conversion.convert(parsed)
+    print(converted)
+
 

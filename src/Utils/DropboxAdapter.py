@@ -1,17 +1,22 @@
+########################################################################################################################
+#
+#   File: DropboxAdapter.py
+#   Purpose: Communicates with Dropbox cloud file storage
+#
+########################################################################################################################
+
 import os
-import sys
 import yaml
 from yaml import CLoader as Loader
 from dropbox import Dropbox
 from dropbox import DropboxOAuth2FlowNoRedirect
 
-yaml_path = os.path.join(os.getcwd(), '../config.yaml')
+yaml_path = os.path.join(os.getcwd(), os.path.pardir, 'config.yaml')
 
 with open(yaml_path, 'r') as yaml_file:
     data = yaml.load(yaml_file, Loader=Loader)
 
-folder_path = '/ColonyRack_data/'
-
+folder_path = data.get('dropbox')[0].get('folder_path')
 APP_KEY = data.get('dropbox')[0].get('app_key')
 APP_SECRET = data.get('dropbox')[0].get('app_secret')
 
@@ -52,13 +57,6 @@ def get_latest(update_time):
         print('No new file to download.')
         return [False, update_time]
 
-    if 'win32' in sys.platform:
-        dropbox_client.files_download_to_file(
-            download_path = os.path.join(os.getcwd(), "../Data", "MiceData.csv"),
-            path=dropbox_download_path)
-    elif 'linux' in sys.platform:
-        dropbox_client.files_download_to_file(
-            download_path='../Data/MiceData.csv',
-            path=dropbox_download_path)
+    dropbox_client.files_download_to_file(download_path = os.path.join(os.getcwd(), os.path.pardir, "Data", "MiceData.csv"),path=dropbox_download_path)
 
     return [True, most_recent_date]

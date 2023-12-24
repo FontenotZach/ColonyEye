@@ -1,11 +1,18 @@
+########################################################################################################################
+#
+#   File: DataClean.py
+#   Purpose: Parsing and packaging of data based on ColonyRack file format
+#
+########################################################################################################################
+
 import pandas as pd
-from MouseEvent import MouseEvent
-from RfidDevice import RfidDevice
-from CageNode import CageNode
-from CageConnection import CageConnection
-from CageNetwork import CageNetwork
-import DBAdapter
-from Mouse import Mouse
+from src.ColonyRackObjs.MouseEvent import MouseEvent
+from src.ColonyRackObjs.RfidDevice import RfidDevice
+from src.ColonyRackObjs.CageNode import CageNode
+from src.ColonyRackObjs.CageConnection import CageConnection
+from src.ColonyRackObjs.CageNetwork import CageNetwork
+from src.Utils import DBAdapter
+from src.ColonyRackObjs.Mouse import Mouse
 import sys
 import os
 import mysql.connector
@@ -22,7 +29,7 @@ def populate_mouse_obj():
     temp_list = []
 
     for event in mouse_events:
-        if event.id_label not in temp_list:
+        if event.id_label not in temp_list and event.id_label != '' and event.id_label != 'none':
             event_list = []
             m = Mouse(event.id_label, event.id_rfid, event_list)
             m.add_event(event)
@@ -34,20 +41,13 @@ def populate_mouse_obj():
 
 
 def clean():
-    if 'win32' in sys.platform:
-        raw_data = pd.read_csv(os.path.join(os.getcwd(), "../Data", "MiceData.csv"), encoding='utf-16', delimiter=';')
-
-    elif 'linux' in sys.platform:
-        raw_data = pd.read_csv('../Data/MiceData.csv', encoding='utf-16', delimiter=';')
-    else:
-        # cannot read data error
-        exit()
+    raw_data = pd.read_csv(os.path.join(os.getcwd(), os.path.pardir, "Data", "MiceData.csv"), encoding='utf-16', delimiter=';')
 
     for row in raw_data.iterrows():
         if row[1].get('DateTime') == '#ID-Device':
             r1 = RfidDevice(row[1].get('IdRFID'), row[1].get('IdLabel'), row[1].get('unitLabel'), row[1].get('eventDuration'), row[1].get('sense1duration'))
             rfid_devices.append(r1)
-        elif row[1].get('DateTime') != 'nan':
+        elif row[1].get('DateTime') != '':
             m1 = MouseEvent(row[1].get('DateTime'), row[1].get('IdRFID'), row[1].get('IdLabel'), row[1].get('unitLabel'), row[1].get('eventDuration'), row[1].get('senseRFIDrecords'), row[1].get('MsgValue1'))
             mouse_events.append(m1)
 
@@ -58,7 +58,7 @@ def read_colony_track_files():
 
 def read_cages():
     global cage_network
-    raw_data = pd.read_csv(os.path.join(os.getcwd(), "../ColonyTrackFiles", "CageNetwork.tsv"),
+    raw_data = pd.read_csv(os.path.join(os.getcwd(), os.path.pardir, "ColonyTrackFiles", "CageNetwork.tsv"),
                            delimiter='\t')
 
     grouped = raw_data.groupby("Source").head(1000)

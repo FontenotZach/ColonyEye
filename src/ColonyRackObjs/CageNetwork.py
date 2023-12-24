@@ -1,8 +1,15 @@
+########################################################################################################################
+#
+#   File: CageNetwork.py
+#   Purpose: The entire ColonyRack system fits in this object
+#
+########################################################################################################################
+
 import yaml
 from yaml import CLoader as Loader
 import os
 
-yaml_path = os.path.join(os.getcwd(), '../config.yaml')
+yaml_path = os.path.join(os.getcwd(), os.pardir, 'config.yaml')
 
 with open(yaml_path, 'r') as yaml_file:
     data = yaml.load(yaml_file, Loader=Loader)

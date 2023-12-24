@@ -1,13 +1,27 @@
-from threading import *
-import Util
-try:
-    import DBAdapter
-except:
-    print('DBAdapter error occurred.')
+########################################################################################################################
+#
+#   File: ColonyEye.py
+#   Purpose: Driver
+#
+########################################################################################################################
 
-T = Thread(target=Util.monitor_daemon())
+from threading import *
+from Matrix import MatrixBot
+from time import sleep
+
+from src.Utils import DBAdapter, Util
+#DBAdapter.wipe()
+DBAdapter.db_init()
+
+
+T = Thread(target=Util.monitor_daemon_dropbox)
 T.daemon = True
 T.start()
 
+T_bot = Thread(target=MatrixBot.run_bot)
+T_bot.daemon = True
+T_bot.start()
 
-# notif mouse movmnt, rfid activity,
+while True:
+    sleep(100)
+
