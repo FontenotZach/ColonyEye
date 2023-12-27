@@ -13,3 +13,8 @@ dropbox:
 
 colony:
   - name: colony_1
+
+matrix:
+  - homeserver: https://matrix-client.matrix.org
+  - username: colony.eye.app
+  - password: jD7*o193nV%#pW

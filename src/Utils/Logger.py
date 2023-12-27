@@ -18,11 +18,11 @@ class Logger:
         while True:
             sleep(15)
             while self.q.qsize() > 0:
-                try:
+                #try:
                     self.file = open(self.f_name, 'a')
 
                     out = self.q.get()
                     self.file.write(out)
                     self.file.close()
-                except:
+                #except:
                     pass

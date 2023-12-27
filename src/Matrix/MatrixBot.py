@@ -2,43 +2,77 @@ import asyncio
 
 import simplematrixbotlib as botlib
 from src.Utils import DBAdapter
+import os
+import yaml
+from yaml import CLoader as Loader
 
 
-def run_bot():
-    creds = botlib.Creds("https://matrix-client.matrix.org", "colony.eye.app", "jD7*o193nV%#pW")
+yaml_path = os.path.join(os.getcwd(), os.path.pardir, 'config.yaml')
+
+with open(yaml_path, 'r') as yaml_file:
+    data = yaml.load(yaml_file, Loader=Loader)
+
+
+def run_bot(log):
+    creds = botlib.Creds(data.get('matrix')[0].get('home_server'), data.get('matrix')[0].get('username'), data.get('matrix')[0].get('password'))
 
     config = botlib.Config()
-    config.emoji_verify = True
+    config.encryption_enabled = False
     config.ignore_unverified_devices = True
+    config.join_on_invite = True
 
     bot = botlib.Bot(creds, config)
     prefix = '!'
 
+    db = DBAdapter.db(True)
+    db.close_cursor()
+
     @bot.listener.on_message_event
-    async def report_inactive(room, message):
+    async def subjects(room, message):
         match = botlib.MessageMatch(room, message, bot, prefix)
 
         if match.is_not_from_this_bot() and match.prefix() and match.command(
                 "subjects"):
 
-            output = DBAdapter.get_report()
+            db.refresh_cursor(True)
+            output = db.get_report()
+            db.close_cursor()
 
             await bot.api.send_text_message(room.room_id, output)
 
+            log.push_message('matrix__bot', 'subjects command executed')
+
+    @bot.listener.on_message_event
+    async def inactive(room, message):
+        match = botlib.MessageMatch(room, message, bot, prefix)
         if match.is_not_from_this_bot() and match.prefix() and match.command(
                 "inactive"):
 
-            output = DBAdapter.get_inactive()
+            db.refresh_cursor(True)
+            output = db.get_inactive()
+            db.close_cursor()
 
             await bot.api.send_text_message(room.room_id, output)
 
+            log.push_message('matrix__bot', 'inactive command executed')
+
+    @bot.listener.on_message_event
+    async def connections(room, message):
+        match = botlib.MessageMatch(room, message, bot, prefix)
         if match.is_not_from_this_bot() and match.prefix() and match.command(
                 "connections"):
 
-            output = DBAdapter.get_connections()
+            db.refresh_cursor(True)
+            output = db.get_connections()
+            db.close_cursor()
 
             await bot.api.send_text_message(room.room_id, output)
 
+            log.push_message('matrix__bot', 'connections command executed')
+
+    @bot.listener.on_message_event
+    async def status(room, message):
+        match = botlib.MessageMatch(room, message, bot, prefix)
         if match.is_not_from_this_bot() and match.prefix() and match.command(
                 "status"):
 
@@ -46,6 +80,11 @@ def run_bot():
 
             await bot.api.send_text_message(room.room_id, output)
 
+            log.push_message('matrix__bot', 'status command executed')
+
+    @bot.listener.on_message_event
+    async def help(room, message):
+        match = botlib.MessageMatch(room, message, bot, prefix)
         if match.is_not_from_this_bot() and match.prefix() and match.command(
                 "help"):
 
@@ -56,10 +95,12 @@ def run_bot():
 
             await bot.api.send_text_message(room.room_id, output)
 
+            log.push_message('matrix__bot', 'help command executed')
+
     while True:
         try:
+            log.push_message('matrix__bot', 'Spinning up bot instance')
             bot.run()
-        except:
+        except asyncio.TimeoutError:
             pass
-
 

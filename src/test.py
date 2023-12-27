@@ -3,19 +3,23 @@ from yaml import CLoader as Loader
 import os
 import mysql.connector
 import src.ColonyTrack.ColonyTrackAdapter as ct
+import datetime
 
 #
 
 from src.Utils import DBAdapter
 
-db = DBAdapter.db()
+db = DBAdapter.db(True)
 
-db.my_cursor.execute('GET * FROM subjects')
+
+db.add_report('x', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'R_N-7')
+
+db.my_cursor.execute('SELECT * FROM reports')
 
 result = db.my_cursor.fetchall()
 
 for r in result:
-    print(r[0])
+    print(r[0] + '\t' + r[1].strftime('%Y-%m-%d %H:%M:%S') + '\t' + r[2])
 
 
 # ct.checkout_data()

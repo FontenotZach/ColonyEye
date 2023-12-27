@@ -10,8 +10,10 @@ import time
 import random
 from src.Utils import DataClean
 from src.Utils import DBAdapter
+from src.Utils import Update
 
-update = [False, 0]
+
+update = Update.Update(False, 0, True, 0)   # Is there an update, what time was the update made, is it the first pass (hardcoded)
 
 
 def excel_time_to_unix_2(fh):
@@ -20,11 +22,15 @@ def excel_time_to_unix_2(fh):
     return dt
 
 
-def monitor_daemon_dropbox():
+def monitor_daemon_dropbox(log):
 
     from src.Utils import DropboxAdapter
 
     thread_id = 'Data Manager'
+
+    log.push_message('monitor', 'daemon running')
+
+    data_clean = DataClean.DataClean()
 
     random.seed()
     global update
@@ -32,45 +38,46 @@ def monitor_daemon_dropbox():
         to_console(thread_id, 'Task Start:')
 
         to_console(thread_id, 'Fetching Dropbox data...')
-        update = DropboxAdapter.get_latest(update[1])
+        DropboxAdapter.get_latest(update, log)
         to_console(thread_id, 'Most recent file timestamp:')
-        to_console(thread_id, update[1].strftime('%m/%d/%y %H:%M:%S'))
+        to_console(thread_id, update.update_time.strftime('%m/%d/%y %H:%M:%S'))
         to_console(thread_id, 'Data fetch complete.')
 
-        if update[0]:
+        if update.update_available:
 
             to_console(thread_id, 'Cleaning data...')
-            DataClean.clean()
-            DataClean.populate_mouse_obj()
-            for mouse in DataClean.mouse_list:
+            data_clean.clean(log)
+            data_clean.populate_mouse_obj(log)
+            for mouse in data_clean.mouse_list:
                 mouse.sort_events()
-            DataClean.read_colony_track_files()
+            data_clean.read_colony_track_files(log)
 
             # TODO: implement ColonyTrack
             # to_console(thread_id, '\nGetting ColonyTrack metrics...')
-            # try:
+            # #try:
             #     ColonyTrackAdapter.checkout_data()
-            # except:
+            # #except:
             #     to_console(thread_id, 'ColonyTrack error.')
             # to_console(thread_id, 'Finished calculating ColonyTrack metrics.')
 
             to_console(thread_id, 'Writing out to DB')
-            DataClean.to_database()
+            data_clean.to_database(update, log)
 
             to_console(thread_id, 'Checking mice activity...')
-            generate_report()
+            data_clean.generate_report(update, log)
             to_console(thread_id, '\nFinished activity check.')
             # mouse_of_the_hour(DataClean.mouse_list)
 
             to_console(thread_id, '\n\nTask complete, sleeping 1 hr...')
         else:
             to_console(thread_id, 'No update, sleeping...')
+        log.push_message('monitor', 'sleeping until next hour')
         time.sleep(3600)
 
 
-def mouse_of_the_hour(mouse_list):
+def mouse_of_the_hour(mouse_list, data_clean):
     print('\nMouse of the hour:')
-    lucky_mouse = DataClean.mouse_list[random.randint(1, len(mouse_list) - 1)]
+    lucky_mouse = data_clean.mouse_list[random.randint(1, len(mouse_list) - 1)]
     print('\nData from mouse #' + str(lucky_mouse.id_label) + '...')
     print('\tRFID chip ' + str(lucky_mouse.id_rfid))
     print('\tEvents:')
@@ -81,12 +88,6 @@ def mouse_of_the_hour(mouse_list):
         most_recent_count = most_recent_count + 1
         if most_recent_count > 10:
             break
-
-
-def generate_report():
-    global update
-    for mouse in DataClean.mouse_list:
-        DBAdapter.add_report(mouse.id_label, mouse.event_list[0].time.strftime('%Y-%m-%d %H:%M:%S'), mouse.event_list[0].unit_label)
 
 
 def to_console(thread_id, message):

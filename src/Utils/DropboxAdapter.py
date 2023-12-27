@@ -35,11 +35,12 @@ except Exception as e:
     exit(1)
 
 
-def get_latest(update_time):
+def get_latest(update, log):
 
     with Dropbox(app_key=APP_KEY, app_secret=APP_SECRET, oauth2_refresh_token=oauth_result.refresh_token) as dropbox_client:
         dropbox_client.users_get_current_account()
         print("Successfully refreshed Dropbox client")
+        log.push_message('monitor', 'Dropbox client success')
 
     file_list = dropbox_client.files_list_folder(folder_path)
     most_current_file = file_list.entries[0].name
@@ -51,12 +52,18 @@ def get_latest(update_time):
                 most_recent_date = entry.server_modified
                 most_current_file = entry.name
 
+    log.push_message('monitor', 'Found most recent file in dropbox: ' + str(most_current_file))
+
     dropbox_download_path = folder_path + most_current_file
 
-    if most_recent_date == update_time:
-        print('No new file to download.')
-        return [False, update_time]
+    if most_recent_date == update.update_time:
+        update.update_available = False
+        log.push_message('monitor', 'No update available')
+        return
 
-    dropbox_client.files_download_to_file(download_path = os.path.join(os.getcwd(), os.path.pardir, "Data", "MiceData.csv"),path=dropbox_download_path)
+    dropbox_client.files_download_to_file(download_path=os.path.join(os.getcwd(), os.path.pardir, "Data", "MiceData.csv"), path=dropbox_download_path)
+    log.push_message('monitor', 'Update found: File downloaded')
 
-    return [True, most_recent_date]
+    update.update_available = True
+    update.update_time = most_recent_date
+    return
