@@ -14,7 +14,8 @@ with open(yaml_path, 'r') as yaml_file:
 
 
 def run_bot(log):
-    creds = botlib.Creds(data.get('matrix')[0].get('home_server'), data.get('matrix')[0].get('username'), data.get('matrix')[0].get('password'))
+    # creds = botlib.Creds(str(data.get('matrix')[0].get('home_server')), str(data.get('matrix')[0].get('username')), str(data.get('matrix')[0].get('password')))
+    creds = botlib.Creds('https://matrix-client.matrix.org', 'colony.eye.app', 'jD7*o193nV%#pW')
 
     config = botlib.Config()
     config.encryption_enabled = False

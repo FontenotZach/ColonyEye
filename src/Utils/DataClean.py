@@ -18,6 +18,7 @@ import os
 import mysql.connector
 import datetime
 
+
 class DataClean:
     
     def __init__(self):
@@ -26,8 +27,8 @@ class DataClean:
         self.rfid_devices = []
         self.cage_network = None
         self.mouse_list = []
+        self.connections = []
         self.update_time = 0
-    
     
     def populate_mouse_obj(self, log):
     
@@ -38,7 +39,7 @@ class DataClean:
     
         for event in self.mouse_events:
             count += 1
-            if event.id_label not in temp_list and event.id_label != '' and event.id_label != 'none':
+            if event.id_label not in temp_list and event.id_label != '' and event.id_label != 'none' and event.id_label != 'nan':
                 event_list = []
                 m = Mouse(event.id_label, event.id_rfid, event_list)
                 m.add_event(event)
@@ -49,29 +50,29 @@ class DataClean:
                 self.mouse_list[pos].add_event(event)
     
         log.push_message('monitor', 'Subject population stop')
-    
-    
+
     def clean(self, log):
         raw_data = pd.read_csv(os.path.join(os.getcwd(), os.path.pardir, "Data", "MiceData.csv"), encoding='utf-16', delimiter=';')
-    
+        count = 0
         for row in raw_data.iterrows():
+            count +=1
             if row[1].get('DateTime') == '#ID-Device':
                 r1 = RfidDevice(row[1].get('IdRFID'), row[1].get('IdLabel'), row[1].get('unitLabel'), row[1].get('eventDuration'), row[1].get('sense1duration'))
                 self.rfid_devices.append(r1)
-            elif row[1].get('DateTime') != '':
+            elif row[1].get('SystemMsg') != 'version' and row[1].get('SystemMsg') != 'start':
                 m1 = MouseEvent(row[1].get('DateTime'), row[1].get('IdRFID'), row[1].get('IdLabel'), row[1].get('unitLabel'), row[1].get('eventDuration'), row[1].get('senseRFIDrecords'), row[1].get('MsgValue1'))
                 self.mouse_events.append(m1)
+            if count > 1000:
+                break
     
         log.push_message('monitor', 'Event sort start')
         self.sorted_events = sorted(self.mouse_events, key=lambda x: x.time, reverse=True)
         log.push_message('monitor', 'Event sort stop')
-    
-    
+
     # TODO This function should eventually handle cage quality
     def read_colony_track_files(self, log):
         self.read_cages(log)
         #read_cage_quality(log)
-    
     
     def read_cages(self, log):
         raw_data = pd.read_csv(os.path.join(os.getcwd(), os.path.pardir, "ColonyTrackFiles", "CageNetwork.tsv"),
@@ -88,6 +89,12 @@ class DataClean:
             node_source = None
             node_dest = None
             connection_id = grouped['Link'][ind]
+
+            connection_device = None
+
+            for device in self.rfid_devices:
+                if connection_id == device.id:
+                    connection_device = device
     
             if grouped['Source'][ind] not in temp:
                 count += 1
@@ -110,14 +117,16 @@ class DataClean:
                 node_dest = cage_list[index]
     
             connection = CageConnection(node_source, node_dest, connection_id)
+
+            self.connections.append(connection)
+
             node_source.add_connection(connection)
             node_dest.add_connection(connection)
     
         log.push_message('monitor', 'read_cages() found ' + str(count) + ' connections')
     
         self.cage_network = CageNetwork(cage_list)
-    
-    
+
     def to_database(self, update, log):
     
         db = DBAdapter.db(True)
@@ -153,8 +162,8 @@ class DataClean:
             for event in self.sorted_events:
                 db.add_event_record(event)
                 count += 1
-                if count > 10:
-                    break
+                # if count > 10:
+                #     break
     
             update.previous_update_time = update.update_time
             update.first_pass = False
@@ -180,9 +189,30 @@ class DataClean:
         db.clear_reports()
 
         for mouse in self.mouse_list:
+
+            last_event = mouse.event_list[0]
+            second_last_event = mouse.event_list[1]
+            next = 2
+
+            last_cage = None
+
+            while last_event.unit_label == second_last_event.unit_label:
+                last_event = second_last_event
+                second_last_event = mouse.event_list[next]
+                next += 1
+
+            last_connection = last_event.match_connection(self.connections)
+            second_last_connection = second_last_event.match_connection(self.connections)
+
+            if last_connection.cage_node_1 == second_last_connection.cage_node_1 or last_connection.cage_node_1 == second_last_connection.cage_node_2:
+                last_cage = last_connection.cage_node_2
+            else:
+                last_cage = last_connection.cage_node_1
+
             count += 1
+
             db.add_report(mouse.id_label, mouse.event_list[0].time.strftime('%Y-%m-%d %H:%M:%S'),
-                          mouse.event_list[0].unit_label)
+                          last_cage)
 
         log.push_message('monitor', 'generate_report() wrote ' + str(count) + ' reports to DB')
 

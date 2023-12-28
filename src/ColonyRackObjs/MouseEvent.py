@@ -22,6 +22,13 @@ class MouseEvent:
         self.sense_value = sense_value
         self.event_id = str(self.id_label) + '_' + str(self.time.timestamp())
 
+    def match_connection(self, connections):
+        for connection in connections:
+            if connection.connection_id == self.unit_label:
+                return connection
+
+        return None
+
 
 def excel_time_to_unix_2(fh):
     res = (fh - 25569.0) * 86400.0 + 21600  # convert to Berlin time

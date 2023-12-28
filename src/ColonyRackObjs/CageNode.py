@@ -9,3 +9,12 @@ class CageNode:
     def add_connection(self, cage_node):
         self.connections.append(cage_node)
 
+    def contains_connection(self, rfid_id):
+
+        contains = False
+
+        for connection in self.connections:
+            if connection.connection_id == rfid_id:
+                contains = True
+
+        return  contains

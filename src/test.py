@@ -11,15 +11,8 @@ from src.Utils import DBAdapter
 
 db = DBAdapter.db(True)
 
+print(db.get_report())
 
-db.add_report('x', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'R_N-7')
-
-db.my_cursor.execute('SELECT * FROM reports')
-
-result = db.my_cursor.fetchall()
-
-for r in result:
-    print(r[0] + '\t' + r[1].strftime('%Y-%m-%d %H:%M:%S') + '\t' + r[2])
 
 
 # ct.checkout_data()

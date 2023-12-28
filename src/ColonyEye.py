@@ -14,6 +14,7 @@ from src.Utils import DBAdapter, Util
 
 db = DBAdapter.db(True)
 
+
 db.wipe()
 
 db.db_init()
