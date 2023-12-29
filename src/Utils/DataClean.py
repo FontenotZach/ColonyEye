@@ -62,8 +62,8 @@ class DataClean:
             elif row[1].get('SystemMsg') != 'version' and row[1].get('SystemMsg') != 'start':
                 m1 = MouseEvent(row[1].get('DateTime'), row[1].get('IdRFID'), row[1].get('IdLabel'), row[1].get('unitLabel'), row[1].get('eventDuration'), row[1].get('senseRFIDrecords'), row[1].get('MsgValue1'))
                 self.mouse_events.append(m1)
-            if count > 1000:
-                break
+            # if count > 1000:      # limit load for testing
+            #     break
     
         log.push_message('monitor', 'Event sort start')
         self.sorted_events = sorted(self.mouse_events, key=lambda x: x.time, reverse=True)
@@ -144,8 +144,7 @@ class DataClean:
             for connection in node.connections:
                 db.add_connection_record(connection)
                 connection_count += 1
-    
-    
+
         log.push_message('monitor', 'DB processed ' + str(count) + ' cage records and ' + str(connection_count) + ' connection records')
     
         count = 0
@@ -190,29 +189,37 @@ class DataClean:
 
         for mouse in self.mouse_list:
 
-            last_event = mouse.event_list[0]
-            second_last_event = mouse.event_list[1]
-            next = 2
+            try:
+                next = 2
 
-            last_cage = None
+                last_event = mouse.event_list[0]
+                second_last_event = mouse.event_list[1]
 
-            while last_event.unit_label == second_last_event.unit_label:
-                last_event = second_last_event
-                second_last_event = mouse.event_list[next]
-                next += 1
 
-            last_connection = last_event.match_connection(self.connections)
-            second_last_connection = second_last_event.match_connection(self.connections)
+                last_cage = None
 
-            if last_connection.cage_node_1 == second_last_connection.cage_node_1 or last_connection.cage_node_1 == second_last_connection.cage_node_2:
-                last_cage = last_connection.cage_node_2
-            else:
-                last_cage = last_connection.cage_node_1
+                while last_event.unit_label == second_last_event.unit_label:
+                    last_event = second_last_event
+                    second_last_event = mouse.event_list[next]
+                    next += 1
 
-            count += 1
+                last_connection = last_event.match_connection(self.connections)
+                second_last_connection = second_last_event.match_connection(self.connections)
 
-            db.add_report(mouse.id_label, mouse.event_list[0].time.strftime('%Y-%m-%d %H:%M:%S'),
-                          last_cage)
+                if last_connection.cage_node_1 == second_last_connection.cage_node_1 or last_connection.cage_node_1 == second_last_connection.cage_node_2:
+                    last_cage = last_connection.cage_node_2
+                else:
+                    last_cage = last_connection.cage_node_1
+
+                count += 1
+
+                if last_cage is not None:
+                    db.add_report(mouse.id_label, mouse.event_list[0].time.strftime('%Y-%m-%d %H:%M:%S'), last_cage)
+                else:
+                    log.push_message('monitor', 'ERROR: cannot locate ' + str(mouse.id_label) + ', newest events do not correspond to any cage.')
+            except Exception as e:
+                log.push_message('monitor', 'ERROR: cannot locate ' + str(mouse.id_label))
+                log.push_message('monitor', str(e) + ' | index = ' + str(next))
 
         log.push_message('monitor', 'generate_report() wrote ' + str(count) + ' reports to DB')
 

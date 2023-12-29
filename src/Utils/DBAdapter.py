@@ -104,7 +104,7 @@ class db:
     
     def get_report(self):
         output = 'Subject activity data (descending time since last activity):\n'
-        output += 'Subject:\t\tLast Activity (UTC):\n'
+        output += 'Subject:\t\tLast Activity (UTC):\n\t\tLast Cage\n'
         self.my_cursor.execute('SELECT * from reports ORDER BY datetime DESC')
         result = self.my_cursor.fetchall()
         if len(result) == 0:
@@ -116,7 +116,7 @@ class db:
         return output
 
     def get_connections(self):
-        output = 'Connection data:\n'
+        output = 'Connection data (RFID ids):\n'
         output += 'Source:\t\tDestination:\n'
         self.my_cursor.execute('SELECT * from cage_connections')
         result = self.my_cursor.fetchall()
@@ -178,15 +178,14 @@ class db:
         except:
             pass
 
-
     def clear_reports(self):
-        #try:
-        self.my_cursor.execute('DROP TABLE reports')
+        try:
+            self.my_cursor.execute('DROP TABLE reports')
 
-        self.my_cursor.execute('CREATE TABLE reports (subject_id VARCHAR(255), datetime DATETIME, last_cage VARCHAR(255), PRIMARY KEY (subject_id), FOREIGN KEY (last_cage) references cages(cage_id))')
+            self.my_cursor.execute('CREATE TABLE reports (subject_id VARCHAR(255), datetime DATETIME, last_cage VARCHAR(255), PRIMARY KEY (subject_id), FOREIGN KEY (last_cage) references cages(cage_id))')
 
-        #except mysql.connector.errors.IntegrityError:
-        #self.db_error('clear_reports() error')
+        except mysql.connector.errors.IntegrityError:
+            self.db_error('clear_reports() error')
     
     
     def db_error(self, message):

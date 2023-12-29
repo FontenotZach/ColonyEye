@@ -14,8 +14,7 @@ with open(yaml_path, 'r') as yaml_file:
 
 
 def run_bot(log):
-    # creds = botlib.Creds(str(data.get('matrix')[0].get('home_server')), str(data.get('matrix')[0].get('username')), str(data.get('matrix')[0].get('password')))
-    creds = botlib.Creds('https://matrix-client.matrix.org', 'colony.eye.app', 'jD7*o193nV%#pW')
+    creds = botlib.Creds(data.get('matrix')[0].get('homeserver'), data.get('matrix')[0].get('username'), data.get('matrix')[0].get('password'))
 
     config = botlib.Config()
     config.encryption_enabled = False
@@ -104,4 +103,3 @@ def run_bot(log):
             bot.run()
         except asyncio.TimeoutError:
             pass
-
