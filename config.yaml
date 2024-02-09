@@ -16,5 +16,5 @@ colony:
 
 matrix:
   - homeserver: https://matrix-client.matrix.org
-  - username: colony.eye.app
-  - password: jD7*o193nV%#pW
+    username: colony.eye.app
+    password: jD7*o193nV%#pW

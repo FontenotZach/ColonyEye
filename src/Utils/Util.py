@@ -31,6 +31,8 @@ class Util:
 
         random.seed()
 
+        loop_count = 0
+
         while True:
 
             data_clean = DataClean.DataClean()
@@ -39,6 +41,9 @@ class Util:
 
             self.to_console(thread_id, 'Fetching Dropbox data...')
             self.dropbox.get_latest(self.update, log)
+
+            last_check = datetime.datetime.now()
+
             self.to_console(thread_id, 'Most recent file timestamp:')
             self.to_console(thread_id, self.update.update_time.strftime('%m/%d/%y %H:%M:%S'))
             self.to_console(thread_id, 'Data fetch complete.')
@@ -69,12 +74,17 @@ class Util:
                 # mouse_of_the_hour(DataClean.mouse_list)
 
                 self.to_console(thread_id, '\n\nTask complete, sleeping 1 hr...')
+
+                if loop_count % 12 == 0:
+                    data_clean.calc_metrics(log)
+                loop_count += 1
             else:
                 self.to_console(thread_id, 'No update, sleeping...')
             log.push_message('monitor', 'sleeping until next hour')
 
-            #TODO: sleep until next x:40 insead of a full hour
-            while (datetime.datetime.now() - self.update.update_time).total_seconds() < 3600:
+
+
+            while (datetime.datetime.now() - last_check).total_seconds() < 3600:
                 time.sleep(10)
 
     def mouse_of_the_hour(self, mouse_list, data_clean):

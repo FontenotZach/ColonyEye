@@ -222,8 +222,24 @@ class DataClean:
                 log.push_message('monitor', str(e) + ' | index = ' + str(next))
 
         log.push_message('monitor', 'generate_report() wrote ' + str(count) + ' reports to DB')
+        log.push_message('monitor', 'Writing connections message.')
+
+        try:
+            output = db.get_connections()
+            db.add_message('connections', output)
+            log.push_message('monitor', 'Connections written. In db messages table under message_id \"connections\".')
+        except Exception as e:
+            log.push_message('monitor', 'Error processing connections data.')
+            print(e)
+
 
         db.commit()
 
+        db.close_cursor()
+
+    def calc_metrics(self, log):
+
+        db = DBAdapter.db(True)
+        db.connection_report = db.get_connections()
         db.close_cursor()
     

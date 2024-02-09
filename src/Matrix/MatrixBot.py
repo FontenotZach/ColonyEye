@@ -63,7 +63,7 @@ def run_bot(log):
                 "connections"):
 
             db.refresh_cursor(True)
-            output = db.get_connections()
+            output = db.get_message('connections')
             db.close_cursor()
 
             await bot.api.send_text_message(room.room_id, output)
