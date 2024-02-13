@@ -21,9 +21,7 @@ def run_backend():
 
     log = Logger.Logger()
 
-    print('Hello1')
     T = Thread(target=util.monitor_daemon_dropbox, args=(log,))
-    print('Hello1')
     T.daemon = True
     T.start()
 
