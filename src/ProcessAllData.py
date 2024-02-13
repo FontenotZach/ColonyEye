@@ -9,7 +9,7 @@ from threading import *
 from Matrix import MatrixBot
 from time import sleep
 from Utils import Logger
-from src.Utils import DBAdapter, Util
+from Utils import DBAdapter, Util
 
 db = DBAdapter.db(True)
 

@@ -22,6 +22,7 @@ class Util:
         self.dropbox = DropboxAdapter.DropboxAdapter()
 
     def monitor_daemon_dropbox(self, log):
+        print('Hello2')
 
         from src.Utils import DropboxAdapter
 
@@ -106,7 +107,7 @@ class Util:
 
     def write_historic_data(self, log):
 
-        from src.Utils import DropboxAdapter
+        from Utils import DropboxAdapter
 
         files = self.dropbox.get_previous(log)
 

@@ -2,12 +2,12 @@ import yaml
 from yaml import CLoader as Loader
 import os
 import mysql.connector
-import src.ColonyTrack.ColonyTrackAdapter as ct
+import ColonyTrack.ColonyTrackAdapter as ct
 import datetime
 
 #
 
-from src.Utils import DBAdapter
+from Utils import DBAdapter
 
 import pyttsx3
 engine = pyttsx3.init() # object creation

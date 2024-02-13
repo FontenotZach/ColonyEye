@@ -1,0 +1,31 @@
+version: '3.8'
+
+x-db-env: &db-env
+  MYSQL_ROOT_PASSWORD: password
+  MYSQL_DATABASE: colonyeye
+  MYSQL_USER: user
+  MYSQL_PASSWORD: password
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      <<: *db-env
+      MYSQL_PORT: 3306
+      # DB_URL: mysql://username:password@db/mydatabase
+      MYSQL_HOST: db
+      FLASK_ENV: development
+
+  db:
+    image: mysql:5.7
+    volumes:
+      - mysql_data:/var/lib/mysql
+    environment:
+      <<: *db-env
+
+volumes:
+  mysql_data:

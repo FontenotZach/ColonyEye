@@ -7,7 +7,7 @@ import yaml
 from yaml import CLoader as Loader
 
 
-yaml_path = os.path.join(os.getcwd(), os.path.pardir, 'config.yaml')
+yaml_path = os.path.join(os.getcwd(), 'config.yaml')
 
 with open(yaml_path, 'r') as yaml_file:
     data = yaml.load(yaml_file, Loader=Loader)

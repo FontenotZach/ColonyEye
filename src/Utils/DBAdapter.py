@@ -9,8 +9,9 @@ import mysql.connector
 import yaml
 from yaml import CLoader as Loader
 import os
+import time
 
-yaml_path = os.path.join(os.getcwd(), os.path.pardir, 'config.yaml')
+yaml_path = os.path.join(os.getcwd(), 'config.yaml')
 
 with open(yaml_path, 'r') as yaml_file:
     data = yaml.load(yaml_file, Loader=Loader)
@@ -19,13 +20,21 @@ with open(yaml_path, 'r') as yaml_file:
 class db:
 
     def __init__(self, buffer):
-        self.mydb = mysql.connector.connect(
-            host=data.get('db_specs')[0].get('host'),
-            port=data.get('db_specs')[0].get('port'),
-            user=data.get('db_users')[0].get('username'),
-            password=data.get('db_users')[0].get('password'),
-            database=data.get('db_specs')[0].get('name')
-        )
+
+        connected = False
+
+        while (not connected):
+            try:
+                self.mydb = mysql.connector.connect(
+                    host=os.environ.get('DB_HOST', 'db'),  # Default to 'localhost' if not set
+                    port=os.environ.get('DB_PORT', '3306'),
+                    user=os.environ.get('DB_USER', 'user'),  # Default user
+                    password=os.environ.get('DB_PASSWORD', 'password'),  # Default password
+                    database=os.environ.get('MYSQL_DATABASE', 'mydatabase')  # Default database name
+                )
+                connected = True
+            except mysql.connector.errors.DatabaseError:
+                time.sleep(10)
 
         self.my_cursor = self.mydb.cursor(buffered=buffer)
 
@@ -253,12 +262,16 @@ class db:
         self.mydb.close()
 
     def refresh_cursor(self, buffer):
-        self.mydb = mysql.connector.connect(
-            host=data.get('db_specs')[0].get('host'),
-            port=data.get('db_specs')[0].get('port'),
-            user=data.get('db_users')[0].get('username'),
-            password=data.get('db_users')[0].get('password'),
-            database=data.get('db_specs')[0].get('name')
-        )
+        try:
+            self.mydb = mysql.connector.connect(
+                host=os.environ.get('MYSQL_HOST', 'db'),  # Default to 'localhost' if not set
+                port=os.environ.get('MYSQL_PORT', '3306'),
+                user=os.environ.get('MYSQL_USER', 'user'),  # Default user
+                password=os.environ.get('MYSQL_PASSWORD', 'password'),  # Default password
+                database=os.environ.get('MYSQL_DATABASE', 'mydatabase')  # Default database name
+            )
+            connected = True
+        except mysql.connector.errors.DatabaseError:
+            time.sleep(10)
 
         self.my_cursor = self.mydb.cursor(buffered=buffer)
