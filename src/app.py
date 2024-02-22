@@ -12,6 +12,7 @@ import dropbox
 from dropbox import DropboxOAuth2Flow
 
 from . import ColonyEye
+from .Utils import DropboxAdapter as dropbox_adapter
 
 app = Flask(__name__)
 app.secret_key = 'HD*WhdfwF2341F@rqwfWJ'
@@ -19,6 +20,9 @@ app.secret_key = 'HD*WhdfwF2341F@rqwfWJ'
 yaml_path = os.path.join(os.getcwd(), 'config.yaml')
 with open(yaml_path, 'r') as yaml_file:
     data = yaml.load(yaml_file, Loader=Loader)
+
+REDIRECT_URI = "http://localhost:5000/dropbox-auth-finish"
+dropbox = dropbox_adapter.DropboxAdapter(REDIRECT_URI)
 
 
 # with app.app_context():
@@ -28,48 +32,31 @@ with open(yaml_path, 'r') as yaml_file:
 
 @app.route('/')
 def index():
+    if 'dropbox_access_token' in session:
+        current_app.logger.warn(session.get('dropbox_access_token'))
+    else:
+        current_app.logger.warn('No keys currently')
     return render_template('index.html')
+
+@app.route('/start')
+def start():
+    current_app.logger.info('Starting monitor app')
+    ColonyEye.run_backend(dropbox=dropbox)
+    return redirect(url_for('index')) 
+
 
 @app.route('/dropbox-auth-start')
 def dropbox_auth_start():
 
-    folder_path = data.get('dropbox')[0].get('folder_path')
-    APP_KEY = data.get('dropbox')[0].get('app_key')
-    APP_SECRET = data.get('dropbox')[0].get('app_secret')
-    REDIRECT_URI = "http://localhost:5000/dropbox-auth-finish"
-
-    
-    auth_flow = DropboxOAuth2Flow(consumer_key=APP_KEY, consumer_secret=APP_SECRET, redirect_uri=REDIRECT_URI, session=session, csrf_token_session_key='dropbox-auth-csrf-token', token_access_type='offline')
-    authorize_url = auth_flow.start()  
-
-    current_app.logger.warn("CSRF session key: " + str(session['dropbox-auth-csrf-token']))
-
+    authorize_url = dropbox.auth_start(session)
     return redirect(authorize_url)
 
 
 @app.route('/dropbox-auth-finish')
 def dropbox_auth_finish():
-
-    APP_KEY = data.get('dropbox')[0].get('app_key')
-    APP_SECRET = data.get('dropbox')[0].get('app_secret')
-    REDIRECT_URI = "http://localhost:5000/dropbox-auth-finish"
-
-
-    state = request.args.get('state', None)
-    auth_code = request.args.get('code', None)
-
-    current_app.logger.warn("state: " + str(state))
-    current_app.logger.warn("code: " + str(auth_code))
     
-    if auth_code is None:
-        return "Authorization code not found in the request.", 400
-
-    # Use the Dropbox SDK or an HTTP request to exchange the code for a token
-    # Example with placeholder SDK method:
-    auth_flow = DropboxOAuth2Flow(consumer_key=APP_KEY, consumer_secret=APP_SECRET, redirect_uri=REDIRECT_URI, session=session, csrf_token_session_key='dropbox-auth-csrf-token', token_access_type='offline')
-    oauth_result = auth_flow.finish(request.args)
-    access_token = oauth_result.access_token
-    # Save the access token securely (e.g., in the session or database)
-    return redirect(url_for('index'))  # Redirect to the main page or appropriate route
+    access_token = dropbox.auth_finish(session, request.args)
+    session['dropbox_access_token'] = access_token
+    return redirect(url_for('index')) 
 
 

@@ -7,7 +7,7 @@ from time import sleep
 class Logger:
     def __init__(self):
         self.q = queue.Queue()
-        self.f_name = os.path.join(os.getcwd(), os.path.pardir, 'Logs', 'ColonyEye_log_' + datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S') + '.txt')
+        self.f_name = os.path.join(os.getcwd(), 'Logs', 'ColonyEye_log_' + datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S') + '.txt')
         self.file = open(self.f_name, 'w')
         self.file.close()
 
@@ -23,5 +23,5 @@ class Logger:
                 self.file.write(out)
                 self.file.close()
 
-def exit():
-    exit()
+    def exit():
+        exit()

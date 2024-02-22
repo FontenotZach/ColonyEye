@@ -18,6 +18,8 @@ import os
 import mysql.connector
 import datetime
 
+from flask import current_app
+
 
 class DataClean:
     
@@ -34,7 +36,9 @@ class DataClean:
     
         temp_list = []
         count = 0
-    
+        
+        #current_app.logger.info('Populating mouse objects')
+
         log.push_message('monitor', 'Subject population start')
     
         for event in self.mouse_events:
@@ -52,7 +56,8 @@ class DataClean:
         log.push_message('monitor', 'Subject population stop')
 
     def clean(self, log):
-        raw_data = pd.read_csv(os.path.join(os.getcwd(), os.path.pardir, "Data", "MiceData.csv"), encoding='utf-16', delimiter=';')
+        #current_app.logger.info('Cleaning data')
+        raw_data = pd.read_csv(os.path.join(os.getcwd(), "Data", "MiceData.csv"), encoding='utf-16', delimiter=';')
         count = 0
         for row in raw_data.iterrows():
             count +=1
@@ -75,7 +80,9 @@ class DataClean:
         #read_cage_quality(log)
     
     def read_cages(self, log):
-        raw_data = pd.read_csv(os.path.join(os.getcwd(), os.path.pardir, "ColonyTrackFiles", "CageNetwork.tsv"),
+        #current_app.logger.info('Populating Colony Rack objects')
+
+        raw_data = pd.read_csv(os.path.join(os.getcwd(), "ColonyTrackFiles", "CageNetwork.tsv"),
                                delimiter='\t')
     
         grouped = raw_data.groupby("Source").head(1000)
@@ -128,7 +135,7 @@ class DataClean:
         self.cage_network = CageNetwork(cage_list)
 
     def to_database(self, update, log):
-    
+        #current_app.logger.info('Writing to DB')
         db = DBAdapter.db(True)
     
         count = 0
@@ -181,6 +188,7 @@ class DataClean:
         log.push_message('monitor', 'DB committed')
 
     def generate_report(self, update, log):
+        #current_app.logger.info('Writing reports')
         count = 0
 
         db = DBAdapter.db(True)

@@ -13,22 +13,22 @@ from src.Utils import DBAdapter
 from src.Utils import Update
 from src.Utils import DropboxAdapter
 from src.Utils import Logger
+from flask import current_app
 
 
 class Util:
 
-    def __init__(self):
+    def __init__(self, dropbox):
         self.update = Update.Update(False, 0, True, 0)   # Is there an update, what time was the update made, is it the first pass (hardcoded)
-        self.dropbox = DropboxAdapter.DropboxAdapter()
+        self.dropbox = dropbox
 
     def monitor_daemon_dropbox(self, log):
-        print('Hello2')
 
         from src.Utils import DropboxAdapter
 
         thread_id = 'Data Manager'
 
-        log.push_message('monitor', 'daemon running')
+        log.push_message(thread_id, 'daemon running')
 
         random.seed()
 
@@ -38,20 +38,20 @@ class Util:
 
             data_clean = DataClean.DataClean()
 
-            self.to_console(thread_id, 'Task Start:')
+            log.push_message(thread_id, 'Task Start:')
 
-            self.to_console(thread_id, 'Fetching Dropbox data...')
+            log.push_message(thread_id, 'Fetching Dropbox data...')
             self.dropbox.get_latest(self.update, log)
 
             last_check = datetime.datetime.now()
 
-            self.to_console(thread_id, 'Most recent file timestamp:')
-            self.to_console(thread_id, self.update.update_time.strftime('%m/%d/%y %H:%M:%S'))
-            self.to_console(thread_id, 'Data fetch complete.')
+            log.push_message(thread_id, 'Most recent file timestamp:')
+            log.push_message(thread_id, self.update.update_time.strftime('%m/%d/%y %H:%M:%S'))
+            log.push_message(thread_id, 'Data fetch complete.')
 
             if self.update.update_available:
 
-                self.to_console(thread_id, 'Cleaning data...')
+                log.push_message(thread_id, 'Cleaning data...')
                 data_clean.clean(log)
                 data_clean.populate_mouse_obj(log)
                 for mouse in data_clean.mouse_list:
@@ -66,21 +66,21 @@ class Util:
                 #     to_console(thread_id, 'ColonyTrack error.')
                 # to_console(thread_id, 'Finished calculating ColonyTrack metrics.')
 
-                self.to_console(thread_id, 'Writing out to DB')
+                log.push_message(thread_id, 'Writing out to DB')
                 data_clean.to_database(self.update, log)
 
-                self.to_console(thread_id, 'Checking mice activity...')
+                log.push_message(thread_id, 'Checking mice activity...')
                 data_clean.generate_report(self.update, log)
-                self.to_console(thread_id, '\nFinished activity check.')
+                log.push_message(thread_id, '\nFinished activity check.')
                 # mouse_of_the_hour(DataClean.mouse_list)
 
-                self.to_console(thread_id, '\n\nTask complete, sleeping 1 hr...')
+                log.push_message(thread_id, '\n\nTask complete, sleeping 1 hr...')
 
                 if loop_count % 12 == 0:
                     data_clean.calc_metrics(log)
                 loop_count += 1
             else:
-                self.to_console(thread_id, 'No update, sleeping...')
+                log.push_message(thread_id, 'No update, sleeping...')
             log.push_message('monitor', 'sleeping until next hour')
 
 

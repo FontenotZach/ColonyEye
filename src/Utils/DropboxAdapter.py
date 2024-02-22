@@ -9,7 +9,7 @@ import os
 import yaml
 from yaml import CLoader as Loader
 from dropbox import Dropbox
-from dropbox import DropboxOAuth2FlowNoRedirect
+from dropbox import DropboxOAuth2Flow
 
 yaml_path = os.path.join(os.getcwd(), 'config.yaml')
 
@@ -18,27 +18,28 @@ with open(yaml_path, 'r') as yaml_file:
 
 class DropboxAdapter:
      
-    def __init__(self):
+    def __init__(self, REDIRECT_URI):
         self.folder_path = data.get('dropbox')[0].get('folder_path')
         self.APP_KEY = data.get('dropbox')[0].get('app_key')
-        self.APP_SECRET = data.get('dropbox')[0].get('app_secret')
+        self.APP_SECRET = data.get('dropbox')[0].get('app_secret')     
+        self.access_token = ''  
+        self.refresh_token = ''
+        self.REDIRECT_URI = REDIRECT_URI 
+
+    def auth_start(self, session):
+        auth_flow = DropboxOAuth2Flow(consumer_key=self.APP_KEY, consumer_secret=self.APP_SECRET, redirect_uri=self.REDIRECT_URI, session=session, csrf_token_session_key='dropbox-auth-csrf-token', token_access_type='offline')
+        authorize_url = auth_flow.start()  
+        return authorize_url
+
+    def auth_finish(self, session, args):
+        auth_flow = DropboxOAuth2Flow(consumer_key=self.APP_KEY, consumer_secret=self.APP_SECRET, redirect_uri=self.REDIRECT_URI, session=session, csrf_token_session_key='dropbox-auth-csrf-token', token_access_type='offline')
+        oauth_result = auth_flow.finish(args)
+        self.access_token = oauth_result.access_token
+        self.refresh_token = oauth_result.refresh_token
+        return self.access_token
         
-        auth_flow = DropboxOAuth2FlowNoRedirect(self.APP_KEY, self.APP_SECRET, token_access_type='offline')
-        
-        authorize_url = auth_flow.start()
-        print("1. Go to: " + authorize_url)
-        print("2. Click \"Allow\" (you might have to log in first).")
-        print("3. Copy the authorization code.")
-        auth_code = input("Enter the authorization code here: ").strip()
-        
-        try:
-            self.oauth_result = auth_flow.finish(auth_code)
-        except Exception as e:
-            print('Error: %s' % (e,))
-            exit(1)
-    
     def get_previous(self, log):
-        with Dropbox(app_key=self.APP_KEY, app_secret=self.APP_SECRET, oauth2_refresh_token=self.oauth_result.refresh_token) as dropbox_client:
+        with Dropbox(app_key=self.APP_KEY, app_secret=self.APP_SECRET, oauth2_refresh_token=self.refresh_token) as dropbox_client:
             dropbox_client.users_get_current_account()
             print("Successfully refreshed Dropbox client")
             log.push_message('monitor', 'Dropbox client success')
@@ -54,7 +55,7 @@ class DropboxAdapter:
     
     def get_latest(self, update, log):
     
-        with Dropbox(app_key=self.APP_KEY, app_secret=self.APP_SECRET, oauth2_refresh_token=self.oauth_result.refresh_token) as dropbox_client:
+        with Dropbox(app_key=self.APP_KEY, app_secret=self.APP_SECRET, oauth2_refresh_token=self.refresh_token) as dropbox_client:
             dropbox_client.users_get_current_account()
             print("Successfully refreshed Dropbox client")
             log.push_message('monitor', 'Dropbox client success')
@@ -78,7 +79,7 @@ class DropboxAdapter:
             log.push_message('monitor', 'No update available')
             return
     
-        dropbox_client.files_download_to_file(download_path=os.path.join(os.getcwd(), os.path.pardir, "Data", "MiceData.csv"), path=dropbox_download_path)
+        dropbox_client.files_download_to_file(download_path=os.path.join(os.getcwd(), "Data", "MiceData.csv"), path=dropbox_download_path)
         log.push_message('monitor', 'Update found: File downloaded')
     
         update.update_available = True
@@ -86,11 +87,11 @@ class DropboxAdapter:
         return
     
     def get_file(self, log, file_name):
-        with Dropbox(app_key=self.APP_KEY, app_secret=self.APP_SECRET, oauth2_refresh_token=self.oauth_result.refresh_token) as dropbox_client:
+        with Dropbox(app_key=self.APP_KEY, app_secret=self.APP_SECRET, oauth2_refresh_token=self.refresh_token) as dropbox_client:
             dropbox_client.users_get_current_account()
             print("Successfully refreshed Dropbox client")
             log.push_message('monitor', 'Dropbox client success')
     
         dropbox_client.files_download_to_file(
-            download_path=os.path.join(os.getcwd(), os.path.pardir, "Data", "MiceData.csv"), path=file_name)
+            download_path=os.path.join(os.getcwd(), "Data", "MiceData.csv"), path=file_name)
         log.push_message('monitor', 'File downloaded')

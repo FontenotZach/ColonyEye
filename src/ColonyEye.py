@@ -12,12 +12,12 @@ from .Utils import Logger
 from .Utils import Util
 from .Utils import DBAdapter, Util
 
-def run_backend():
+def run_backend(dropbox):
     db = DBAdapter.db(True)
     db.db_init()
     db.close_cursor()
 
-    util = Util.Util()
+    util = Util.Util(dropbox=dropbox)
 
     log = Logger.Logger()
 

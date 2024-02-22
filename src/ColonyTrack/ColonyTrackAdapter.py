@@ -3,7 +3,7 @@ import os
 import rdata
 
 
-data_script_path = os.path.join(os.getcwd(), os.path.pardir, "ColonyTrackFiles", "Scripts", "ColonyTrackScript.r")
+data_script_path = os.path.join(os.getcwd(), "ColonyTrackFiles", "Scripts", "ColonyTrackScript.r")
 metrics_script_path = None
 
 
@@ -12,7 +12,7 @@ def checkout_data():
 
 
 def to_df():
-    path = os.path.join(os.getcwd(), os.path.pardir, "Data", "ColonyTrackData.RData")
+    path = os.path.join(os.getcwd(), "Data", "ColonyTrackData.RData")
     print(path)
     parsed = rdata.parser.parse_file(rdata.TESTDATA_PATH / path)
     converted = rdata.conversion.convert(parsed)
