@@ -1,0 +1,12 @@
+dropbox:
+  - app_key: your-key
+    app_secret: your-secret
+    folder_path: your-path
+
+colony:
+  - name: colony_1
+
+matrix:
+  - homeserver: https://matrix-client.matrix.org
+    username: your-app
+    password: your-password
